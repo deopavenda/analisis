@@ -1,6 +1,8 @@
 import streamlit as st
 import joblib
 import re
+import pandas as pd
+import matplotlib.pyplot as plt
 from nltk.sentiment import SentimentIntensityAnalyzer
 import nltk
 
@@ -9,13 +11,9 @@ nltk.download('vader_lexicon')
 sid = SentimentIntensityAnalyzer()
 model = joblib.load("random_forest_model.pkl")
 
-# Styling tambahan
-st.set_page_config(page_title="Sentimen Sosial Media", layout="centered")
-st.markdown(
-    "<h1 style='text-align: center;'>📊 Analisis Sentimen Media Sosial</h1>"
-    "<h4 style='text-align: center; color: gray;'>Prediksi Tren Pasar Menggunakan Random Forest</h4><br>",
-    unsafe_allow_html=True
-)
+st.set_page_config(page_title="Analisis Sentimen Media Sosial", layout="centered")
+st.title("📊 Analisis Sentimen Media Sosial")
+st.subheader("Prediksi Tren Pasar Menggunakan Random Forest")
 
 # Fungsi bantu
 def clean_text(text):
@@ -32,33 +30,39 @@ def predict_sentiment(text):
     score = get_score(text)
     return model.predict([[score]])[0], score
 
-# Input box
-st.write("💬 Masukkan teks media sosial di bawah ini:")
-text_input = st.text_area("", placeholder="Contoh: Saham Tesla sangat menjanjikan hari ini 🚀")
+# Session State untuk menyimpan riwayat prediksi
+if "history" not in st.session_state:
+    st.session_state.history = []
 
-# Button prediksi
+# Input pengguna
+text_input = st.text_area("Masukkan teks media sosial di sini:")
+
 if st.button("🔍 Prediksi Sentimen"):
-    if not text_input.strip():
-        st.warning("⚠️ Masukkan teks terlebih dahulu.")
+    if text_input.strip():
+        label, score = predict_sentiment(text_input)
+        emoji = {"positive": "negative":, "neutral"
+        st.success(f"Hasil Prediksi: **{label.upper()}** {emoji[label]}")
+        st.write(f"Skor Sentimen (VADER): `{score:.4f}`")
+
+        # Simpan ke history
+        st.session_state.history.append({"Teks": text_input, "Label": label, "Skor": score})
     else:
-        result, score = predict_sentiment(text_input)
-        
-        # Emoji hasil
-        emoji = {
-            "positive": "😊",
-            "negative": "😠",
-            "neutral": "😐"
-        }
+        st.warning("⚠️ Harap masukkan teks terlebih dahulu.")
 
-        # Warna hasil
-        color = {
-            "positive": "green",
-            "negative": "red",
-            "neutral": "gray"
-        }
+# Tampilkan Riwayat
+if st.session_state.history:
+    st.markdown("---")
+    st.subheader("📜 Riwayat Prediksi")
 
-        st.markdown(f"<h3 style='color:{color[result]};'>Hasil: {result.upper()} {emoji[result]}</h3>", unsafe_allow_html=True)
-        st.markdown(f"<p><b>Skor Sentimen (VADER):</b> {score:.4f}</p>", unsafe_allow_html=True)
+    df_history = pd.DataFrame(st.session_state.history)
+    st.dataframe(df_history)
+
+    # Pie Chart
+    st.markdown("### 📊 Distribusi Sentimen")
+    fig, ax = plt.subplots()
+    df_history["Label"].value_counts().plot.pie(autopct="%1.1f%%", startangle=90, ax=ax)
+    ax.set_ylabel("")
+    st.pyplot(fig)
 
 # Footer
-st.markdown("<hr><p style='text-align:center; font-size:12px;'>Dibuat oleh <b>deopavenda</b> • Streamlit + Random Forest + VADER</p>", unsafe_allow_html=True)
+st.markdown("<hr><center><sub>Developed by <b>deopavenda</b> • Streamlit App</sub></center>", unsafe_allow_html=True)
