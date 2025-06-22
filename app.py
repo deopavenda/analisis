@@ -40,7 +40,6 @@ text_input = st.text_area("Masukkan teks media sosial di sini:")
 if st.button("🔍 Prediksi Sentimen"):
     if text_input.strip():
         label, score = predict_sentiment(text_input)
-        emoji = {"positive": "negative":, "neutral"
         st.success(f"Hasil Prediksi: **{label.upper()}** {emoji[label]}")
         st.write(f"Skor Sentimen (VADER): `{score:.4f}`")
 
